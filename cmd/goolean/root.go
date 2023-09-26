@@ -5,16 +5,21 @@ import (
 	"os"
 
 	"github.com/spf13/cobra"
+	"github.com/thecatster/goolean/pkg/goolean"
 )
 
+var version = "0.0.1"
+
 var rootCmd = &cobra.Command{
-	Use:   "goolean",
-	Short: "goolean - a simple CLI to solve boolean algebra",
+	Use:     "goolean",
+	Version: version,
+	Short:   "goolean - a simple CLI to solve boolean algebra",
 	Long: `goolean is a CLI tool to solve boolean algebra
 
 One can use goolean to solve boolean algebra straight from the terminal`,
 	Run: func(cmd *cobra.Command, args []string) {
-
+		res := goolean.BeginShell()
+		fmt.Println(res)
 	},
 }
 
