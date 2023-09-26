@@ -1,23 +1,31 @@
 package goolean
 
 import (
+	"bufio"
 	"fmt"
+	"log"
+	"os"
 )
 
 func BeginShell() (result string) {
 	for {
-		input := ""
-
 		fmt.Print("> ")
 
-		fmt.Scanf("%s", &input)
+		scanner := bufio.NewScanner(os.Stdin)
+		scanner.Scan()
 
-		res := handleInput(&input)
+		err := scanner.Err()
 
-		fmt.Println("%s", res)
+		if err != nil {
+			log.Fatal(err)
+		}
+
+		res := handleInput(scanner.Text())
+
+		fmt.Printf("%s\n", res)
 	}
 }
 
-func handleInput(input *string) (result string) {
-	return ""
+func handleInput(input string) (result string) {
+	return input
 }
