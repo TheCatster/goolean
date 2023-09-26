@@ -1,11 +1,10 @@
 /*
-Copyright © 2023 NAME HERE <EMAIL ADDRESS>
-
+Copyright © 2023 Daniil Rose <daniil.rose@posteo.org>
 */
 package main
 
-import "github.com/thecatster/goolean/cmd"
+import "github.com/thecatster/goolean/cmd/goolean"
 
 func main() {
-	cmd.Execute()
+	goolean.Execute()
 }
