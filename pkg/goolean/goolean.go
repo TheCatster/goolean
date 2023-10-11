@@ -97,7 +97,7 @@ func tokenize(input string) ([]Token, error) {
 			tokens = append(tokens, Token{Type: OPERATOR, Value: "NOR"})
 			i += 2 // Skip next two characters
 		} else if i+2 < len(input) && input[i:i+3] == "XOR" {
-			tokens = append(tokens, Token{Type: OPERATOR, Value: "XOR"})
+			tokens = append(tokens, Token{Type: OPERATOR, Value: "⊕"})
 			i += 2 // Skip next two characters
 		} else if unicode.IsLetter(ch) {
 			tokens = append(tokens, Token{Type: VARIABLE, Value: string(ch)})
