@@ -52,4 +52,4 @@ go test ./...
 
 ## License
 
-Goolean is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
+Goolean is licensed under the GPLv3 License. See the [LICENSE](LICENSE) file for details.
