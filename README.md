@@ -1,4 +1,5 @@
 # Goolean
+[![Go - Build](https://github.com/TheCatster/goolean/actions/workflows/go.yml/badge.svg?branch=master)](https://github.com/TheCatster/goolean/actions/workflows/go.yml)
 
 Goolean is a command-line application written in Go, designed to simplify Boolean algebra expressions and generate truth tables. Utilizing the Cobra framework, it functions as a REPL (Read-Evaluate-Print Loop) to provide an interactive user experience.
 
