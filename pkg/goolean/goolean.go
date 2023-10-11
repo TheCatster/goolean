@@ -70,13 +70,17 @@ func isOperator(ch string) bool {
 func precedence(op string) int {
 	switch op {
 	case "!":
-		return 4
+		return 4 // Complement variables
 	case "NAND", "NOR", "XOR":
-		return 3
+		return 3 // Combined logic gates
 	case "&":
-		return 2
+		return 2 // And precedence
 	case "|":
-		return 1
+		return 1 // Or has a precedence lower than other operators
+	case "(":
+		return 0 // Assigning a low precedence to open parenthesis
+	case ")":
+		return 0 // Assigning a low precedence to close parenthesis
 	}
 	return 0
 }
@@ -99,6 +103,10 @@ func tokenize(input string) ([]Token, error) {
 		} else if i+2 < len(input) && input[i:i+3] == "XOR" {
 			tokens = append(tokens, Token{Type: OPERATOR, Value: "⊕"})
 			i += 2 // Skip next two characters
+		} else if ch == '(' {
+			tokens = append(tokens, Token{Type: OPERATOR, Value: "("})
+		} else if ch == ')' {
+			tokens = append(tokens, Token{Type: OPERATOR, Value: ")"})
 		} else if unicode.IsLetter(ch) {
 			tokens = append(tokens, Token{Type: VARIABLE, Value: string(ch)})
 		} else {
@@ -115,11 +123,24 @@ func shuntingYard(tokens []Token) ([]Token, error) {
 		if token.Type == VARIABLE {
 			output = append(output, token)
 		} else if token.Type == OPERATOR {
-			for len(operators) > 0 && precedence(operators[len(operators)-1].Value) >= precedence(token.Value) {
-				output = append(output, operators[len(operators)-1])
-				operators = operators[:len(operators)-1]
+			if token.Value == "(" {
+				operators = append(operators, token)
+			} else if token.Value == ")" {
+				for len(operators) > 0 && operators[len(operators)-1].Value != "(" {
+					output = append(output, operators[len(operators)-1])
+					operators = operators[:len(operators)-1]
+				}
+				if len(operators) == 0 {
+					return nil, errors.New("mismatched parentheses")
+				}
+				operators = operators[:len(operators)-1] // Pop the open parenthesis
+			} else {
+				for len(operators) > 0 && precedence(operators[len(operators)-1].Value) >= precedence(token.Value) {
+					output = append(output, operators[len(operators)-1])
+					operators = operators[:len(operators)-1]
+				}
+				operators = append(operators, token)
 			}
-			operators = append(operators, token)
 		}
 	}
 	for len(operators) > 0 {
