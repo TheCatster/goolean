@@ -18,8 +18,7 @@ var rootCmd = &cobra.Command{
 
 One can use goolean to solve boolean algebra straight from the terminal`,
 	Run: func(cmd *cobra.Command, args []string) {
-		res := goolean.BeginShell()
-		fmt.Println(res)
+		goolean.Run()
 	},
 }
 
