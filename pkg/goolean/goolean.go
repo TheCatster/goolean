@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"unicode"
 )
 
@@ -35,15 +36,19 @@ func runRepl() {
 			return
 		} else {
 			tree, err := parse(input)
-
 			if err != nil {
 				fmt.Println(err)
 				continue
 			}
 
 			simplifiedTree := simplify(tree)
-			simplifiedExprStr := printExpr(simplifiedTree)
-			fmt.Println(simplifiedExprStr)
+			table, err := generateTruthTable(simplifiedTree)
+			if err != nil {
+				fmt.Println(err)
+				continue
+			}
+
+			printTruthTable(table, simplifiedTree)
 		}
 	}
 }
@@ -101,7 +106,7 @@ func tokenize(input string) ([]Token, error) {
 			tokens = append(tokens, Token{Type: OPERATOR, Value: "NOR"})
 			i += 2 // Skip next two characters
 		} else if i+2 < len(input) && input[i:i+3] == "XOR" {
-			tokens = append(tokens, Token{Type: OPERATOR, Value: "⊕"})
+			tokens = append(tokens, Token{Type: OPERATOR, Value: "XOR"})
 			i += 2 // Skip next two characters
 		} else if ch == '(' {
 			tokens = append(tokens, Token{Type: OPERATOR, Value: "("})
@@ -220,6 +225,30 @@ func simplify(expr *Node) *Node {
 			Right: expr.Right,
 		}
 		expr.Right = nil
+	case "XOR":
+		// Convert A XOR B to (A|B)&(!A|!B)
+		left := expr.Left
+		right := expr.Right
+
+		expr.Value.Value = "&"
+		expr.Left = &Node{
+			Value: Token{Type: OPERATOR, Value: "|"},
+			Left:  left,
+			Right: right,
+		}
+		expr.Right = &Node{
+			Value: Token{Type: OPERATOR, Value: "|"},
+			Left: &Node{
+				Value: Token{Type: OPERATOR, Value: "!"},
+				Left:  left,
+				Right: nil,
+			},
+			Right: &Node{
+				Value: Token{Type: OPERATOR, Value: "!"},
+				Left:  right,
+				Right: nil,
+			},
+		}
 	}
 
 	return expr
@@ -243,4 +272,143 @@ func printExpr(expr *Node) string {
 		}
 	}
 	return exprf
+}
+
+func evaluateExpression(expr *Node, variables []string, values []bool) (bool, error) {
+	if expr == nil {
+		return false, errors.New("expression cannot be nil")
+	}
+
+	if expr.Value.Type == VARIABLE {
+		// Find index of variable in variables slice
+		index := indexOf(variables, expr.Value.Value)
+		if index == -1 {
+			return false, errors.New("variable not found: " + expr.Value.Value)
+		}
+		return values[index], nil
+	}
+
+	if expr.Value.Type == OPERATOR {
+		switch expr.Value.Value {
+		case "!":
+			value, err := evaluateExpression(expr.Left, variables, values)
+			if err != nil {
+				return false, err
+			}
+			return !value, nil
+		case "&":
+			leftValue, err := evaluateExpression(expr.Left, variables, values)
+			if err != nil {
+				return false, err
+			}
+			rightValue, err := evaluateExpression(expr.Right, variables, values)
+			if err != nil {
+				return false, err
+			}
+			return leftValue && rightValue, nil
+		case "|":
+			leftValue, err := evaluateExpression(expr.Left, variables, values)
+			if err != nil {
+				return false, err
+			}
+			rightValue, err := evaluateExpression(expr.Right, variables, values)
+			if err != nil {
+				return false, err
+			}
+			return leftValue || rightValue, nil
+		case "XOR":
+			leftValue, err := evaluateExpression(expr.Left, variables, values)
+			if err != nil {
+				return false, err
+			}
+			rightValue, err := evaluateExpression(expr.Right, variables, values)
+			if err != nil {
+				return false, err
+			}
+			return leftValue != rightValue, nil
+		}
+	}
+
+	return false, errors.New("invalid node type")
+}
+
+func getUniqueVariables(expr *Node) []string {
+	if expr == nil {
+		return []string{}
+	}
+
+	var variables []string
+
+	if expr.Value.Type == VARIABLE {
+		variables = append(variables, expr.Value.Value)
+	}
+
+	leftVariables := getUniqueVariables(expr.Left)
+	rightVariables := getUniqueVariables(expr.Right)
+
+	// Combine and deduplicate variables
+	variables = append(variables, leftVariables...)
+	variables = append(variables, rightVariables...)
+	variables = deduplicate(variables)
+
+	return variables
+}
+
+func deduplicate(items []string) []string {
+	seen := map[string]bool{}
+	unique := []string{}
+
+	for _, item := range items {
+		if !seen[item] {
+			seen[item] = true
+			unique = append(unique, item)
+		}
+	}
+
+	return unique
+}
+
+func indexOf(slice []string, item string) int {
+	for i, value := range slice {
+		if value == item {
+			return i
+		}
+	}
+	return -1
+}
+
+func generateTruthTable(expr *Node) ([][]bool, error) {
+	// Get unique variables from expression
+	variables := getUniqueVariables(expr)
+	numCombinations := 1 << len(variables)
+	truthTable := make([][]bool, numCombinations)
+
+	for i := 0; i < numCombinations; i++ {
+		row := make([]bool, len(variables)+1) // +1 for the result column
+		for j := range variables {
+			row[j] = (i & (1 << j)) > 0
+		}
+		value, err := evaluateExpression(expr, variables, row)
+		if err != nil {
+			return nil, err
+		}
+		row[len(variables)] = value
+		truthTable[i] = row
+	}
+
+	return truthTable, nil
+}
+
+func printTruthTable(truthTable [][]bool, expr *Node) {
+	variables := getUniqueVariables(expr)
+	headers := append(variables, printExpr(expr))
+	fmt.Println(strings.Join(headers, " | "))
+
+	for _, row := range truthTable {
+		strRow := make([]string, len(row))
+		for i, value := range row {
+			strRow[i] = fmt.Sprintf("%v", value)
+		}
+		fmt.Println(strings.Join(strRow, " | "))
+	}
 }
