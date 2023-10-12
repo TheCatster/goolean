@@ -42,9 +42,6 @@ func runRepl() {
 			}
 
 			simplifiedTree := simplify(tree)
-			simplifiedExprStr := printExpr(simplifiedTree)
-			fmt.Println(simplifiedExprStr)
-
 			table, err := generateTruthTable(simplifiedTree)
 			if err != nil {
 				fmt.Println(err)
@@ -228,6 +225,30 @@ func simplify(expr *Node) *Node {
 			Right: expr.Right,
 		}
 		expr.Right = nil
+	case "XOR":
+		// Convert A XOR B to (A|B)&(!A|!B)
+		left := expr.Left
+		right := expr.Right
+
+		expr.Value.Value = "&"
+		expr.Left = &Node{
+			Value: Token{Type: OPERATOR, Value: "|"},
+			Left:  left,
+			Right: right,
+		}
+		expr.Right = &Node{
+			Value: Token{Type: OPERATOR, Value: "|"},
+			Left: &Node{
+				Value: Token{Type: OPERATOR, Value: "!"},
+				Left:  left,
+				Right: nil,
+			},
+			Right: &Node{
+				Value: Token{Type: OPERATOR, Value: "!"},
+				Left:  right,
+				Right: nil,
+			},
+		}
 	}
 
 	return expr
@@ -285,6 +306,16 @@ func evaluateExpression(expr *Node, variables []string, values []bool) (bool, er
 				return false, err
 			}
 			return leftValue && rightValue, nil
+		case "|":
+			leftValue, err := evaluateExpression(expr.Left, variables, values)
+			if err != nil {
+				return false, err
+			}
+			rightValue, err := evaluateExpression(expr.Right, variables, values)
+			if err != nil {
+				return false, err
+			}
+			return leftValue || rightValue, nil
 		case "XOR":
 			leftValue, err := evaluateExpression(expr.Left, variables, values)
 			if err != nil {
@@ -354,7 +385,7 @@ func generateTruthTable(expr *Node) ([][]bool, error) {
 
 	for i := 0; i < numCombinations; i++ {
 		row := make([]bool, len(variables)+1) // +1 for the result column
-		for j, _ := range variables {
+		for j := range variables {
 			row[j] = (i & (1 << j)) > 0
 		}
 		value, err := evaluateExpression(expr, variables, row)
