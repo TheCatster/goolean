@@ -5,9 +5,9 @@ Goolean is a command-line application written in Go, designed to simplify Boolea
 
 ## Features
 
-- [ ] Simplification of Boolean algebra expressions.
-- [ ] Generation of truth tables.
-- [x] Support for the following operators: AND (`&`), OR (`|`), NOT (`!`), NAND, NOR, and XOR (`⊕`).
+- [ ] Simplification of Boolean algebra expressions (partially complete).
+- [x] Generation of truth tables.
+- [x] Support for the following operators: AND (`&`), OR (`|`), NOT (`!`), NAND, NOR, and XOR.
 - [x] Parentheses support for expression grouping.
 - [x] Interactive REPL interface for real-time expression evaluation.
 
